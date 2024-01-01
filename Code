@@ -1,0 +1,271 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cctype>
+#include <windows.h>
+
+using namespace std;
+
+void Encode(vector<int> index, char matrix[4][8]) {
+	int a = 0, b = 0;
+
+	cout << "Слово после зашифровки: " << endl;
+
+	for (int i = 0; i <= index.size() - 3; i += 4) {
+		a = index[i + 3] + 1;
+
+		// буквы на одной строке
+		if (index[i] == index[i + 2] && a < 8) {
+			cout.width(5);
+			cout << matrix[index[i]][index[i + 1] + 1] << matrix[index[i + 2]][a];
+		}
+
+		// буквы на одной строке и у края
+		if (index[i] == index[i + 2] && a >= 8) {
+			a = 0;
+			cout.width(5);
+			cout << matrix[index[i]][index[i + 1] + 1] << matrix[index[i + 2]][a];
+		}
+
+		b = index[i + 2] + 1;
+
+		// буквы в одном столбце
+		if (index[i + 1] == index[i + 3] && b < 4) {
+			cout.width(5);
+			cout << matrix[index[i] + 1][index[i + 1]] << matrix[b][index[i + 3]];
+		}
+
+		// буквы в одном столбце и у края
+		if (index[i + 1] == index[i + 3] && b >= 4) {
+			b = 0;
+
+			cout.width(5);
+			cout << matrix[index[i] + 1][index[i + 1]] << matrix[b][index[i + 3]];
+		}
+
+		// основное алгоритм кодирования
+		if (index[i] != index[i + 2] && index[i + 1] != index[i + 3]) {
+			cout.width(5);
+			cout << matrix[index[i + 2]][index[i + 1]] << matrix[index[i]][index[i + 3]];
+		}
+	}
+}
+
+void Decode(vector<int> index, char matrix[4][8]) {
+	int a = 0, b = 0;
+
+	string Dcode;
+
+	cout << "Слово после дешифровки: ";
+
+	for (int i = 0; i <= index.size() - 3; i += 4) {
+
+		// буквы на одной строке
+		a = index[i + 3] - 1;
+
+		if (index[i] == index[i + 2] && a >= 0) {
+			Dcode += matrix[index[i]][index[i + 1] - 1];
+			Dcode += matrix[index[i + 2]][a];
+		}
+
+		// буквы на одной строке и у края
+		if (index[i] == index[i + 2] && a < 0) {
+			a = 7;
+
+			Dcode += matrix[index[i]][index[i + 1] - 1];
+			Dcode += matrix[index[i + 2]][a];
+		}
+
+		// буквы в одном столбце
+		b = index[i + 2] - 1;
+
+		if (index[i + 1] == index[i + 3] && b >= 0) {
+			Dcode += matrix[index[i] - 1][index[i + 1]];
+			Dcode += matrix[b][index[i + 3]];
+		}
+
+		// буквы в одном столбце и у края
+		if (index[i + 1] == index[i + 3] && b < 0) {
+			b = 3;
+			Dcode += matrix[index[i] - 1][index[i + 1]];
+			Dcode += matrix[b][index[i + 3]];
+		}
+
+		// основное алгоритм декодирования
+		if (index[i] != index[i + 2] && index[i + 1] != index[i + 3]) {
+			Dcode += matrix[index[i + 2]][index[i + 1]];
+			Dcode += matrix[index[i]][index[i + 3]];
+		}
+	}
+
+	//затирание символа в неполных биграммах
+	int ind = Dcode.length();
+	if (Dcode[ind - 1] == 'ъ'){
+		Dcode.erase(ind - 1, 1);
+	}
+
+	cout << Dcode << endl;
+}
+
+void uppercase(string& word, string ABC) {
+	string alf = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+
+	for (int i = 0; i < word.length(); i++){
+		for (int j = 0; j < ABC.length(); j++){
+			if ((word[i]) == ABC[j]) word[i] = alf[j];
+		}
+	}
+}
+
+void outside(string& word, int& num) {
+	string alf = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+	for (int i = 0; i < word.length(); i++) {
+		if (alf.find(word[i]) == -1) {
+			cout << "Ошибка при чтении символа номер " << i + 1 << endl;
+
+			num = 0;
+
+			break;
+		}
+		else num = 1;
+	}
+}
+
+void delDubl(string& word) {
+	for (int i = 1; i < word.length(); i++) {
+		if (word[i - 1] == word[i]) {
+			word.erase(i, 1);
+
+			i--;
+		}
+	}
+}
+
+int main() {
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
+
+	vector<int> index;
+
+	string keyword, code;
+
+	string abc = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";//для заполнения массива
+	string ABC = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";//для проверки на регистр
+
+	char matrix[4][8];
+
+	char var;
+
+	cout << "Введите (E), чтобы зашифровать или (D), чтобы расшифровать: ";
+	cin >> var;
+
+	if (var != 'D' && var != 'E')
+		exit(0);
+
+	int x = 0;
+	while (x == 0) {
+
+		cout << "Введите ключевое слово: ";
+		cin >> keyword;
+
+		// проверка на заглавные буквы
+		uppercase(keyword, ABC);
+
+		//проверка на посторонние символы
+		outside(keyword, x);
+	}
+
+	// удаление одинаковых букв
+	delDubl(keyword);
+
+	// удаление букв ключевого слова из алфавита
+	for (int i = 0; i < keyword.length(); i++) {
+		for (int j = 0; j < abc.length(); j++) {
+			if (keyword[i] == abc[j]) abc.erase(j, 1);
+		}
+	}
+
+	// заполнение массива
+	cout << "Введите ключ матрицы: " << endl;
+	int k = 0, m = 0;
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 8; j++) {
+
+			if (k < keyword.length()) {
+				matrix[i][j] = keyword[k];
+			}
+
+			if (k >= keyword.length()) {
+				matrix[i][j] = abc[m];
+				m++;
+			}
+
+			k++;
+		}
+	}
+
+	// вывод массива
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 8; j++) {
+			cout << matrix[i][j] << " ";
+		}
+		cout << endl;
+	}
+
+	int p = 0;
+	cout << "Введите сово: ";
+
+	while (p == 0) {
+		cin >> code;
+
+		// проверка на верхний регистр
+		uppercase(code, ABC);
+
+		//проверка на посторонние символы
+		outside(code, p);
+	}
+
+	if (var == 'E') {
+
+		// удаление дублирования
+		delDubl(code);
+	}
+
+	// добавление символа в нечетную биграмму
+	if (code.length() % 2 != 0) code.push_back('ъ');
+
+	// создание биграмм
+	for (int i = 0; i < code.length(); i += 2) {
+		cout.width(5);
+		cout << code[i] << code[i + 1];
+	}
+
+	cout << endl;
+
+	// нахождение индексов в матрице
+	for (int i = 0; i < code.length(); i++) {
+		for (int j = 0; j < 4; j++) {
+			for (int k = 0; k < 8; k++) {
+				if (code[i] == matrix[j][k]) {
+
+					index.push_back(j);
+
+					index.push_back(k);
+
+					break;
+				}
+			}
+		}
+	}
+
+	for (int i = 0; i < index.size(); i += 2)
+		cout << index[i] << " " << index[i + 1] << " ";
+
+	cout << endl;
+
+	if (var == 'E')
+		Encode(index, matrix);
+	else
+		Decode(index, matrix);
+	return 0;
+}
